@@ -1,997 +1,539 @@
+package com.joshuapinter.RNUnifiedContacts;
 
-  // IntelliJ API Decompiler stub source generated from a class file
-  // Implementation of methods is not available
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.ContactsContract;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
+import android.util.Log;
 
-package android.provider;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
 
-public final class ContactsContract {
-    public static final java.lang.String AUTHORITY = "com.android.contacts";
-    public static final android.net.Uri AUTHORITY_URI;
-    public static final java.lang.String CALLER_IS_SYNCADAPTER = "caller_is_syncadapter";
-    public static final java.lang.String DEFERRED_SNIPPETING = "deferred_snippeting";
-    public static final java.lang.String DEFERRED_SNIPPETING_QUERY = "deferred_snippeting_query";
-    public static final java.lang.String DIRECTORY_PARAM_KEY = "directory";
-    public static final java.lang.String LIMIT_PARAM_KEY = "limit";
-    public static final java.lang.String PRIMARY_ACCOUNT_NAME = "name_for_primary_account";
-    public static final java.lang.String PRIMARY_ACCOUNT_TYPE = "type_for_primary_account";
-    public static final java.lang.String REMOVE_DUPLICATE_ENTRIES = "remove_duplicate_entries";
-    public static final java.lang.String STREQUENT_PHONE_ONLY = "strequent_phone_only";
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-    public ContactsContract() { /* compiled code */ }
+import static android.provider.ContactsContract.CommonDataKinds.Contactables;
+import static android.provider.ContactsContract.CommonDataKinds.Email;
+import static android.provider.ContactsContract.CommonDataKinds.Event;
+import static android.provider.ContactsContract.CommonDataKinds.Organization;
+import static android.provider.ContactsContract.CommonDataKinds.Phone;
+import static android.provider.ContactsContract.CommonDataKinds.StructuredName;
+import static android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 
-    public static boolean isProfileId(long id) { /* compiled code */ }
+public class ContactsProvider {
+    public static final int ID_FOR_PROFILE_CONTACT = -1;
 
-    public static final class Intents {
-        public static final java.lang.String ACTION_VOICE_SEND_MESSAGE_TO_CONTACTS = "android.provider.action.VOICE_SEND_MESSAGE_TO_CONTACTS";
-        public static final java.lang.String ATTACH_IMAGE = "com.android.contacts.action.ATTACH_IMAGE";
-        public static final java.lang.String CONTACTS_DATABASE_CREATED = "android.provider.Contacts.DATABASE_CREATED";
-        public static final java.lang.String EXTRA_CREATE_DESCRIPTION = "com.android.contacts.action.CREATE_DESCRIPTION";
-        public static final java.lang.String EXTRA_FORCE_CREATE = "com.android.contacts.action.FORCE_CREATE";
-        public static final java.lang.String EXTRA_RECIPIENT_CONTACT_CHAT_ID = "android.provider.extra.RECIPIENT_CONTACT_CHAT_ID";
-        public static final java.lang.String EXTRA_RECIPIENT_CONTACT_NAME = "android.provider.extra.RECIPIENT_CONTACT_NAME";
-        public static final java.lang.String EXTRA_RECIPIENT_CONTACT_URI = "android.provider.extra.RECIPIENT_CONTACT_URI";
-        public static final java.lang.String INVITE_CONTACT = "com.android.contacts.action.INVITE_CONTACT";
-        public static final java.lang.String METADATA_ACCOUNT_TYPE = "android.provider.account_type";
-        public static final java.lang.String METADATA_MIMETYPE = "android.provider.mimetype";
-        public static final java.lang.String SEARCH_SUGGESTION_CLICKED = "android.provider.Contacts.SEARCH_SUGGESTION_CLICKED";
-        public static final java.lang.String SEARCH_SUGGESTION_CREATE_CONTACT_CLICKED = "android.provider.Contacts.SEARCH_SUGGESTION_CREATE_CONTACT_CLICKED";
-        public static final java.lang.String SEARCH_SUGGESTION_DIAL_NUMBER_CLICKED = "android.provider.Contacts.SEARCH_SUGGESTION_DIAL_NUMBER_CLICKED";
-        public static final java.lang.String SHOW_OR_CREATE_CONTACT = "com.android.contacts.action.SHOW_OR_CREATE_CONTACT";
+    private static final List<String> JUST_ME_PROJECTION = new ArrayList<String>() {{
+        add((ContactsContract.Data._ID));
+        add(ContactsContract.Data.CONTACT_ID);
+        add(ContactsContract.Data.RAW_CONTACT_ID);
+        add(ContactsContract.Data.LOOKUP_KEY);
+        add(ContactsContract.Contacts.Data.MIMETYPE);
+        add(ContactsContract.Profile.DISPLAY_NAME);
+        add(Contactables.PHOTO_URI);
+        add(StructuredName.DISPLAY_NAME);
+        add(StructuredName.GIVEN_NAME);
+        add(StructuredName.MIDDLE_NAME);
+        add(StructuredName.FAMILY_NAME);
+        add(StructuredName.PREFIX);
+        add(StructuredName.SUFFIX);
+        add(Phone.NUMBER);
+        add(Phone.TYPE);
+        add(Phone.LABEL);
+        add(Email.DATA);
+        add(Email.ADDRESS);
+        add(Email.TYPE);
+        add(Email.LABEL);
+        add(Organization.COMPANY);
+        add(Organization.TITLE);
+        add(Organization.DEPARTMENT);
+        add(StructuredPostal.FORMATTED_ADDRESS);
+        add(StructuredPostal.TYPE);
+        add(StructuredPostal.LABEL);
+        add(StructuredPostal.STREET);
+        add(StructuredPostal.POBOX);
+        add(StructuredPostal.NEIGHBORHOOD);
+        add(StructuredPostal.CITY);
+        add(StructuredPostal.REGION);
+        add(StructuredPostal.POSTCODE);
+        add(StructuredPostal.COUNTRY);
+        add(Event.START_DATE);
+        add(Event.TYPE);
+    }};
 
-        public Intents() { /* compiled code */ }
+    private static final List<String> FULL_PROJECTION = new ArrayList<String>() {{
+        addAll(JUST_ME_PROJECTION);
+    }};
 
-        public static final class Insert {
-            public static final java.lang.String ACTION = "android.intent.action.INSERT";
-            public static final java.lang.String COMPANY = "company";
-            public static final java.lang.String DATA = "data";
-            public static final java.lang.String EMAIL = "email";
-            public static final java.lang.String EMAIL_ISPRIMARY = "email_isprimary";
-            public static final java.lang.String EMAIL_TYPE = "email_type";
-            public static final java.lang.String EXTRA_ACCOUNT = "android.provider.extra.ACCOUNT";
-            public static final java.lang.String EXTRA_DATA_SET = "android.provider.extra.DATA_SET";
-            public static final java.lang.String FULL_MODE = "full_mode";
-            public static final java.lang.String IM_HANDLE = "im_handle";
-            public static final java.lang.String IM_ISPRIMARY = "im_isprimary";
-            public static final java.lang.String IM_PROTOCOL = "im_protocol";
-            public static final java.lang.String JOB_TITLE = "job_title";
-            public static final java.lang.String NAME = "name";
-            public static final java.lang.String NOTES = "notes";
-            public static final java.lang.String PHONE = "phone";
-            public static final java.lang.String PHONETIC_NAME = "phonetic_name";
-            public static final java.lang.String PHONE_ISPRIMARY = "phone_isprimary";
-            public static final java.lang.String PHONE_TYPE = "phone_type";
-            public static final java.lang.String POSTAL = "postal";
-            public static final java.lang.String POSTAL_ISPRIMARY = "postal_isprimary";
-            public static final java.lang.String POSTAL_TYPE = "postal_type";
-            public static final java.lang.String SECONDARY_EMAIL = "secondary_email";
-            public static final java.lang.String SECONDARY_EMAIL_TYPE = "secondary_email_type";
-            public static final java.lang.String SECONDARY_PHONE = "secondary_phone";
-            public static final java.lang.String SECONDARY_PHONE_TYPE = "secondary_phone_type";
-            public static final java.lang.String TERTIARY_EMAIL = "tertiary_email";
-            public static final java.lang.String TERTIARY_EMAIL_TYPE = "tertiary_email_type";
-            public static final java.lang.String TERTIARY_PHONE = "tertiary_phone";
-            public static final java.lang.String TERTIARY_PHONE_TYPE = "tertiary_phone_type";
+    private static final List<String> PHOTO_PROJECTION = new ArrayList<String>() {{
+        add(Contactables.PHOTO_URI);
+    }};
 
-            public Insert() { /* compiled code */ }
-        }
+    private final ContentResolver contentResolver;
+
+    public ContactsProvider(ContentResolver contentResolver) {
+        this.contentResolver = contentResolver;
     }
 
-    public static final class DisplayPhoto {
-        public static final android.net.Uri CONTENT_MAX_DIMENSIONS_URI;
-        public static final android.net.Uri CONTENT_URI;
-        public static final java.lang.String DISPLAY_MAX_DIM = "display_max_dim";
-        public static final java.lang.String THUMBNAIL_MAX_DIM = "thumbnail_max_dim";
-
-        DisplayPhoto() { /* compiled code */ }
-    }
-
-    public static final class QuickContact {
-        public static final java.lang.String ACTION_QUICK_CONTACT = "android.provider.action.QUICK_CONTACT";
-        public static final java.lang.String EXTRA_EXCLUDE_MIMES = "android.provider.extra.EXCLUDE_MIMES";
-        public static final java.lang.String EXTRA_MODE = "android.provider.extra.MODE";
-        public static final java.lang.String EXTRA_PRIORITIZED_MIMETYPE = "android.provider.extra.PRIORITIZED_MIMETYPE";
-        public static final int MODE_LARGE = 3;
-        public static final int MODE_MEDIUM = 2;
-        public static final int MODE_SMALL = 1;
-
-        public QuickContact() { /* compiled code */ }
-
-        public static void showQuickContact(android.content.Context context, android.view.View target, android.net.Uri lookupUri, int mode, java.lang.String[] excludeMimes) { /* compiled code */ }
-
-        public static void showQuickContact(android.content.Context context, android.graphics.Rect target, android.net.Uri lookupUri, int mode, java.lang.String[] excludeMimes) { /* compiled code */ }
-
-        public static void showQuickContact(android.content.Context context, android.view.View target, android.net.Uri lookupUri, java.lang.String[] excludeMimes, java.lang.String prioritizedMimeType) { /* compiled code */ }
-
-        public static void showQuickContact(android.content.Context context, android.graphics.Rect target, android.net.Uri lookupUri, java.lang.String[] excludeMimes, java.lang.String prioritizedMimeType) { /* compiled code */ }
-    }
-
-    public static final class PinnedPositions {
-        public static final int DEMOTED = -1;
-        public static final int UNPINNED = 0;
-
-        public PinnedPositions() { /* compiled code */ }
-
-        public static void undemote(android.content.ContentResolver contentResolver, long contactId) { /* compiled code */ }
-
-        public static void pin(android.content.ContentResolver contentResolver, long contactId, int pinnedPosition) { /* compiled code */ }
-    }
-
-    public static final class DataUsageFeedback {
-        public static final android.net.Uri DELETE_USAGE_URI;
-        public static final android.net.Uri FEEDBACK_URI;
-        public static final java.lang.String USAGE_TYPE = "type";
-        public static final java.lang.String USAGE_TYPE_CALL = "call";
-        public static final java.lang.String USAGE_TYPE_LONG_TEXT = "long_text";
-        public static final java.lang.String USAGE_TYPE_SHORT_TEXT = "short_text";
-
-        public DataUsageFeedback() { /* compiled code */ }
-    }
-
-    public static final class ProviderStatus {
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/provider_status";
-        public static final android.net.Uri CONTENT_URI;
-        public static final java.lang.String DATABASE_CREATION_TIMESTAMP = "database_creation_timestamp";
-        public static final java.lang.String STATUS = "status";
-        public static final int STATUS_BUSY = 1;
-        public static final int STATUS_EMPTY = 2;
-        public static final int STATUS_NORMAL = 0;
-
-        ProviderStatus() { /* compiled code */ }
-    }
-
-    public static final class Settings implements android.provider.ContactsContract.SettingsColumns {
-        public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/setting";
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/setting";
-        public static final android.net.Uri CONTENT_URI;
-
-        Settings() { /* compiled code */ }
-    }
-
-    protected static interface SettingsColumns {
-        java.lang.String ACCOUNT_NAME = "account_name";
-        java.lang.String ACCOUNT_TYPE = "account_type";
-        java.lang.String ANY_UNSYNCED = "any_unsynced";
-        java.lang.String DATA_SET = "data_set";
-        java.lang.String SHOULD_SYNC = "should_sync";
-        java.lang.String UNGROUPED_COUNT = "summ_count";
-        java.lang.String UNGROUPED_VISIBLE = "ungrouped_visible";
-        java.lang.String UNGROUPED_WITH_PHONES = "summ_phones";
-    }
-
-    public static final class AggregationExceptions implements android.provider.BaseColumns {
-        public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/aggregation_exception";
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/aggregation_exception";
-        public static final android.net.Uri CONTENT_URI;
-        public static final java.lang.String RAW_CONTACT_ID1 = "raw_contact_id1";
-        public static final java.lang.String RAW_CONTACT_ID2 = "raw_contact_id2";
-        public static final java.lang.String TYPE = "type";
-        public static final int TYPE_AUTOMATIC = 0;
-        public static final int TYPE_KEEP_SEPARATE = 2;
-        public static final int TYPE_KEEP_TOGETHER = 1;
-
-        AggregationExceptions() { /* compiled code */ }
-    }
-
-    public static final class Groups implements android.provider.BaseColumns, android.provider.ContactsContract.GroupsColumns, android.provider.ContactsContract.SyncColumns {
-        public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/group";
-        public static final android.net.Uri CONTENT_SUMMARY_URI;
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/group";
-        public static final android.net.Uri CONTENT_URI;
-
-        Groups() { /* compiled code */ }
-
-        public static android.content.EntityIterator newEntityIterator(android.database.Cursor cursor) { /* compiled code */ }
-    }
-
-    protected static interface GroupsColumns {
-        java.lang.String AUTO_ADD = "auto_add";
-        java.lang.String DATA_SET = "data_set";
-        java.lang.String DELETED = "deleted";
-        java.lang.String FAVORITES = "favorites";
-        java.lang.String GROUP_IS_READ_ONLY = "group_is_read_only";
-        java.lang.String GROUP_VISIBLE = "group_visible";
-        java.lang.String NOTES = "notes";
-        java.lang.String RES_PACKAGE = "res_package";
-        java.lang.String SHOULD_SYNC = "should_sync";
-        java.lang.String SUMMARY_COUNT = "summ_count";
-        java.lang.String SUMMARY_WITH_PHONES = "summ_phones";
-        java.lang.String SYSTEM_ID = "system_id";
-        java.lang.String TITLE = "title";
-        java.lang.String TITLE_RES = "title_res";
-    }
-
-    public static final class CommonDataKinds {
-        CommonDataKinds() { /* compiled code */ }
-
-        public static final class Contactables implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final android.net.Uri CONTENT_FILTER_URI;
-            public static final android.net.Uri CONTENT_URI;
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String VISIBLE_CONTACTS_ONLY = "visible_contacts_only";
-
-            public Contactables() { /* compiled code */ }
-        }
-
-        public static final class Callable implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final android.net.Uri CONTENT_FILTER_URI;
-            public static final android.net.Uri CONTENT_URI;
-            public static final android.net.Uri ENTERPRISE_CONTENT_FILTER_URI;
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-
-            public Callable() { /* compiled code */ }
-        }
-
-        public static final class Identity implements android.provider.ContactsContract.DataColumnsWithJoins {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/identity";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String IDENTITY = "data1";
-            public static final java.lang.String NAMESPACE = "data2";
-
-            Identity() { /* compiled code */ }
-        }
-
-        public static final class SipAddress implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/sip_address";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String SIP_ADDRESS = "data1";
-            public static final int TYPE_HOME = 1;
-            public static final int TYPE_OTHER = 3;
-            public static final int TYPE_WORK = 2;
-
-            SipAddress() { /* compiled code */ }
-
-            public static final int getTypeLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class Website implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/website";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final int TYPE_BLOG = 2;
-            public static final int TYPE_FTP = 6;
-            public static final int TYPE_HOME = 4;
-            public static final int TYPE_HOMEPAGE = 1;
-            public static final int TYPE_OTHER = 7;
-            public static final int TYPE_PROFILE = 3;
-            public static final int TYPE_WORK = 5;
-            public static final java.lang.String URL = "data1";
-
-            Website() { /* compiled code */ }
-        }
-
-        public static final class GroupMembership implements android.provider.ContactsContract.DataColumnsWithJoins {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/group_membership";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String GROUP_ROW_ID = "data1";
-            public static final java.lang.String GROUP_SOURCE_ID = "group_sourceid";
-
-            GroupMembership() { /* compiled code */ }
-        }
-
-        public static final class Note implements android.provider.ContactsContract.DataColumnsWithJoins {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/note";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String NOTE = "data1";
-
-            Note() { /* compiled code */ }
-        }
-
-        public static final class Photo implements android.provider.ContactsContract.DataColumnsWithJoins {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/photo";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String PHOTO = "data15";
-            public static final java.lang.String PHOTO_FILE_ID = "data14";
-
-            Photo() { /* compiled code */ }
-        }
-
-        public static final class Event implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/contact_event";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String START_DATE = "data1";
-            public static final int TYPE_ANNIVERSARY = 1;
-            public static final int TYPE_BIRTHDAY = 3;
-            public static final int TYPE_OTHER = 2;
-
-            Event() { /* compiled code */ }
-
-            public static int getTypeResource(java.lang.Integer type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class Relation implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/relation";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String NAME = "data1";
-            public static final int TYPE_ASSISTANT = 1;
-            public static final int TYPE_BROTHER = 2;
-            public static final int TYPE_CHILD = 3;
-            public static final int TYPE_DOMESTIC_PARTNER = 4;
-            public static final int TYPE_FATHER = 5;
-            public static final int TYPE_FRIEND = 6;
-            public static final int TYPE_MANAGER = 7;
-            public static final int TYPE_MOTHER = 8;
-            public static final int TYPE_PARENT = 9;
-            public static final int TYPE_PARTNER = 10;
-            public static final int TYPE_REFERRED_BY = 11;
-            public static final int TYPE_RELATIVE = 12;
-            public static final int TYPE_SISTER = 13;
-            public static final int TYPE_SPOUSE = 14;
-
-            Relation() { /* compiled code */ }
-
-            public static final int getTypeLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class Organization implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String COMPANY = "data1";
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/organization";
-            public static final java.lang.String DEPARTMENT = "data5";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String JOB_DESCRIPTION = "data6";
-            public static final java.lang.String OFFICE_LOCATION = "data9";
-            public static final java.lang.String PHONETIC_NAME = "data8";
-            public static final java.lang.String PHONETIC_NAME_STYLE = "data10";
-            public static final java.lang.String SYMBOL = "data7";
-            public static final java.lang.String TITLE = "data4";
-            public static final int TYPE_OTHER = 2;
-            public static final int TYPE_WORK = 1;
-
-            Organization() { /* compiled code */ }
-
-            public static final int getTypeLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class Im implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/im";
-            public static final java.lang.String CUSTOM_PROTOCOL = "data6";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String PROTOCOL = "data5";
-            public static final int PROTOCOL_AIM = 0;
-            public static final int PROTOCOL_CUSTOM = -1;
-            public static final int PROTOCOL_GOOGLE_TALK = 5;
-            public static final int PROTOCOL_ICQ = 6;
-            public static final int PROTOCOL_JABBER = 7;
-            public static final int PROTOCOL_MSN = 1;
-            public static final int PROTOCOL_NETMEETING = 8;
-            public static final int PROTOCOL_QQ = 4;
-            public static final int PROTOCOL_SKYPE = 3;
-            public static final int PROTOCOL_YAHOO = 2;
-            public static final int TYPE_HOME = 1;
-            public static final int TYPE_OTHER = 3;
-            public static final int TYPE_WORK = 2;
-
-            Im() { /* compiled code */ }
-
-            public static final int getTypeLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-
-            public static final int getProtocolLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getProtocolLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class StructuredPostal implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String CITY = "data7";
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/postal-address_v2";
-            public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/postal-address_v2";
-            public static final android.net.Uri CONTENT_URI;
-            public static final java.lang.String COUNTRY = "data10";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String FORMATTED_ADDRESS = "data1";
-            public static final java.lang.String NEIGHBORHOOD = "data6";
-            public static final java.lang.String POBOX = "data5";
-            public static final java.lang.String POSTCODE = "data9";
-            public static final java.lang.String REGION = "data8";
-            public static final java.lang.String STREET = "data4";
-            public static final int TYPE_HOME = 1;
-            public static final int TYPE_OTHER = 3;
-            public static final int TYPE_WORK = 2;
-
-            StructuredPostal() { /* compiled code */ }
-
-            public static final int getTypeLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class Email implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String ADDRESS = "data1";
-            public static final android.net.Uri CONTENT_FILTER_URI;
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/email_v2";
-            public static final android.net.Uri CONTENT_LOOKUP_URI;
-            public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/email_v2";
-            public static final android.net.Uri CONTENT_URI;
-            public static final java.lang.String DISPLAY_NAME = "data4";
-            public static final android.net.Uri ENTERPRISE_CONTENT_FILTER_URI;
-            public static final android.net.Uri ENTERPRISE_CONTENT_LOOKUP_URI;
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final int TYPE_HOME = 1;
-            public static final int TYPE_MOBILE = 4;
-            public static final int TYPE_OTHER = 3;
-            public static final int TYPE_WORK = 2;
-
-            Email() { /* compiled code */ }
-
-            public static final int getTypeLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class Phone implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final android.net.Uri CONTENT_FILTER_URI;
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/phone_v2";
-            public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/phone_v2";
-            public static final android.net.Uri CONTENT_URI;
-            public static final android.net.Uri ENTERPRISE_CONTENT_FILTER_URI;
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String NORMALIZED_NUMBER = "data4";
-            public static final java.lang.String NUMBER = "data1";
-            public static final java.lang.String SEARCH_DISPLAY_NAME_KEY = "search_display_name";
-            public static final java.lang.String SEARCH_PHONE_NUMBER_KEY = "search_phone_number";
-            public static final int TYPE_ASSISTANT = 19;
-            public static final int TYPE_CALLBACK = 8;
-            public static final int TYPE_CAR = 9;
-            public static final int TYPE_COMPANY_MAIN = 10;
-            public static final int TYPE_FAX_HOME = 5;
-            public static final int TYPE_FAX_WORK = 4;
-            public static final int TYPE_HOME = 1;
-            public static final int TYPE_ISDN = 11;
-            public static final int TYPE_MAIN = 12;
-            public static final int TYPE_MMS = 20;
-            public static final int TYPE_MOBILE = 2;
-            public static final int TYPE_OTHER = 7;
-            public static final int TYPE_OTHER_FAX = 13;
-            public static final int TYPE_PAGER = 6;
-            public static final int TYPE_RADIO = 14;
-            public static final int TYPE_TELEX = 15;
-            public static final int TYPE_TTY_TDD = 16;
-            public static final int TYPE_WORK = 3;
-            public static final int TYPE_WORK_MOBILE = 17;
-            public static final int TYPE_WORK_PAGER = 18;
-
-            Phone() { /* compiled code */ }
-
-            public static final int getTypeLabelResource(int type) { /* compiled code */ }
-
-            public static final java.lang.CharSequence getTypeLabel(android.content.res.Resources res, int type, java.lang.CharSequence label) { /* compiled code */ }
-        }
-
-        public static final class Nickname implements android.provider.ContactsContract.DataColumnsWithJoins, android.provider.ContactsContract.CommonDataKinds.CommonColumns {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/nickname";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String NAME = "data1";
-            public static final int TYPE_DEFAULT = 1;
-            public static final int TYPE_INITIALS = 5;
-            public static final int TYPE_MAIDEN_NAME = 3;
-            /**
-             * @deprecated
-             */
-            @java.lang.Deprecated
-            public static final int TYPE_MAINDEN_NAME = 3;
-            public static final int TYPE_OTHER_NAME = 2;
-            public static final int TYPE_SHORT_NAME = 4;
-
-            Nickname() { /* compiled code */ }
-        }
-
-        public static final class StructuredName implements android.provider.ContactsContract.DataColumnsWithJoins {
-            public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/name";
-            public static final java.lang.String DISPLAY_NAME = "data1";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-            public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-            public static final java.lang.String FAMILY_NAME = "data3";
-            public static final java.lang.String FULL_NAME_STYLE = "data10";
-            public static final java.lang.String GIVEN_NAME = "data2";
-            public static final java.lang.String MIDDLE_NAME = "data5";
-            public static final java.lang.String PHONETIC_FAMILY_NAME = "data9";
-            public static final java.lang.String PHONETIC_GIVEN_NAME = "data7";
-            public static final java.lang.String PHONETIC_MIDDLE_NAME = "data8";
-            public static final java.lang.String PHONETIC_NAME_STYLE = "data11";
-            public static final java.lang.String PREFIX = "data4";
-            public static final java.lang.String SUFFIX = "data6";
-
-            StructuredName() { /* compiled code */ }
-        }
-
-        protected static interface CommonColumns extends android.provider.ContactsContract.CommonDataKinds.BaseTypes {
-            java.lang.String DATA = "data1";
-            java.lang.String LABEL = "data3";
-            java.lang.String TYPE = "data2";
-        }
-
-        public static interface BaseTypes {
-            int TYPE_CUSTOM = 0;
-        }
-    }
-
-    public static class SearchSnippets {
-        public static final java.lang.String DEFERRED_SNIPPETING_KEY = "deferred_snippeting";
-        public static final java.lang.String SNIPPET = "snippet";
-
-        public SearchSnippets() { /* compiled code */ }
-    }
-
-    /**
-     * @deprecated
-     */
-    @java.lang.Deprecated
-    public static final class Presence extends android.provider.ContactsContract.StatusUpdates {
-        public Presence() { /* compiled code */ }
-    }
-
-    public static class StatusUpdates implements android.provider.ContactsContract.StatusColumns, android.provider.ContactsContract.PresenceColumns {
-        public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/status-update";
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/status-update";
-        public static final android.net.Uri CONTENT_URI;
-        public static final android.net.Uri PROFILE_CONTENT_URI;
-
-        StatusUpdates() { /* compiled code */ }
-
-        public static final int getPresenceIconResourceId(int status) { /* compiled code */ }
-
-        public static final int getPresencePrecedence(int status) { /* compiled code */ }
-    }
-
-    protected static interface PresenceColumns {
-        java.lang.String CUSTOM_PROTOCOL = "custom_protocol";
-        java.lang.String DATA_ID = "presence_data_id";
-        java.lang.String IM_ACCOUNT = "im_account";
-        java.lang.String IM_HANDLE = "im_handle";
-        java.lang.String PROTOCOL = "protocol";
-    }
-
-    public static final class PhoneLookup implements android.provider.BaseColumns, android.provider.ContactsContract.PhoneLookupColumns, android.provider.ContactsContract.ContactsColumns, android.provider.ContactsContract.ContactOptionsColumns, android.provider.ContactsContract.ContactNameColumns {
-        public static final android.net.Uri CONTENT_FILTER_URI;
-        public static final android.net.Uri ENTERPRISE_CONTENT_FILTER_URI;
-        public static final java.lang.String QUERY_PARAMETER_SIP_ADDRESS = "sip";
-
-        PhoneLookup() { /* compiled code */ }
-    }
-
-    protected static interface PhoneLookupColumns {
-        java.lang.String CONTACT_ID = "contact_id";
-        java.lang.String DATA_ID = "data_id";
-        java.lang.String LABEL = "label";
-        java.lang.String NORMALIZED_NUMBER = "normalized_number";
-        java.lang.String NUMBER = "number";
-        java.lang.String TYPE = "type";
-    }
-
-    public static final class RawContactsEntity implements android.provider.BaseColumns, android.provider.ContactsContract.DataColumns, android.provider.ContactsContract.RawContactsColumns {
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/raw_contact_entity";
-        public static final android.net.Uri CONTENT_URI;
-        public static final java.lang.String DATA_ID = "data_id";
-        public static final android.net.Uri PROFILE_CONTENT_URI;
-
-        RawContactsEntity() { /* compiled code */ }
-    }
-
-    public static final class Data implements android.provider.ContactsContract.DataColumnsWithJoins {
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/data";
-        public static final android.net.Uri CONTENT_URI;
-        public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-        public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-        public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-        public static final java.lang.String VISIBLE_CONTACTS_ONLY = "visible_contacts_only";
-
-        Data() { /* compiled code */ }
-
-        public static android.net.Uri getContactLookupUri(android.content.ContentResolver resolver, android.net.Uri dataUri) { /* compiled code */ }
-    }
-
-    protected static interface DataColumnsWithJoins extends android.provider.BaseColumns, android.provider.ContactsContract.DataColumns, android.provider.ContactsContract.StatusColumns, android.provider.ContactsContract.RawContactsColumns, android.provider.ContactsContract.ContactsColumns, android.provider.ContactsContract.ContactNameColumns, android.provider.ContactsContract.ContactOptionsColumns, android.provider.ContactsContract.ContactStatusColumns, android.provider.ContactsContract.DataUsageStatColumns {
-    }
-
-    protected static interface DataUsageStatColumns {
-        java.lang.String LAST_TIME_USED = "last_time_used";
-        java.lang.String TIMES_USED = "times_used";
-    }
-
-    protected static interface DataColumns {
-        java.lang.String CARRIER_PRESENCE = "carrier_presence";
-        int CARRIER_PRESENCE_VT_CAPABLE = 1;
-        java.lang.String DATA1 = "data1";
-        java.lang.String DATA10 = "data10";
-        java.lang.String DATA11 = "data11";
-        java.lang.String DATA12 = "data12";
-        java.lang.String DATA13 = "data13";
-        java.lang.String DATA14 = "data14";
-        java.lang.String DATA15 = "data15";
-        java.lang.String DATA2 = "data2";
-        java.lang.String DATA3 = "data3";
-        java.lang.String DATA4 = "data4";
-        java.lang.String DATA5 = "data5";
-        java.lang.String DATA6 = "data6";
-        java.lang.String DATA7 = "data7";
-        java.lang.String DATA8 = "data8";
-        java.lang.String DATA9 = "data9";
-        java.lang.String DATA_VERSION = "data_version";
-        java.lang.String IS_PRIMARY = "is_primary";
-        java.lang.String IS_READ_ONLY = "is_read_only";
-        java.lang.String IS_SUPER_PRIMARY = "is_super_primary";
-        java.lang.String MIMETYPE = "mimetype";
-        java.lang.String RAW_CONTACT_ID = "raw_contact_id";
-        java.lang.String RES_PACKAGE = "res_package";
-        java.lang.String SYNC1 = "data_sync1";
-        java.lang.String SYNC2 = "data_sync2";
-        java.lang.String SYNC3 = "data_sync3";
-        java.lang.String SYNC4 = "data_sync4";
-    }
-
-    protected static interface StatusColumns {
-        int AVAILABLE = 5;
-        int AWAY = 2;
-        int CAPABILITY_HAS_CAMERA = 4;
-        int CAPABILITY_HAS_VIDEO = 2;
-        int CAPABILITY_HAS_VOICE = 1;
-        java.lang.String CHAT_CAPABILITY = "chat_capability";
-        int DO_NOT_DISTURB = 4;
-        int IDLE = 3;
-        int INVISIBLE = 1;
-        int OFFLINE = 0;
-        java.lang.String PRESENCE = "mode";
-        /**
-         * @deprecated
-         */
-        @java.lang.Deprecated
-        java.lang.String PRESENCE_CUSTOM_STATUS = "status";
-        /**
-         * @deprecated
-         */
-        @java.lang.Deprecated
-        java.lang.String PRESENCE_STATUS = "mode";
-        java.lang.String STATUS = "status";
-        java.lang.String STATUS_ICON = "status_icon";
-        java.lang.String STATUS_LABEL = "status_label";
-        java.lang.String STATUS_RES_PACKAGE = "status_res_package";
-        java.lang.String STATUS_TIMESTAMP = "status_ts";
-    }
-
-    public static final class RawContacts implements android.provider.BaseColumns, android.provider.ContactsContract.RawContactsColumns, android.provider.ContactsContract.ContactOptionsColumns, android.provider.ContactsContract.ContactNameColumns, android.provider.ContactsContract.SyncColumns {
-        public static final int AGGREGATION_MODE_DEFAULT = 0;
-        public static final int AGGREGATION_MODE_DISABLED = 3;
-        /**
-         * @deprecated
-         */
-        @java.lang.Deprecated
-        public static final int AGGREGATION_MODE_IMMEDIATE = 1;
-        public static final int AGGREGATION_MODE_SUSPENDED = 2;
-        public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/raw_contact";
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/raw_contact";
-        public static final android.net.Uri CONTENT_URI;
-
-        RawContacts() { /* compiled code */ }
-
-        public static android.net.Uri getContactLookupUri(android.content.ContentResolver resolver, android.net.Uri rawContactUri) { /* compiled code */ }
-
-        public static android.content.EntityIterator newEntityIterator(android.database.Cursor cursor) { /* compiled code */ }
-
-        public static final class DisplayPhoto {
-            public static final java.lang.String CONTENT_DIRECTORY = "display_photo";
-
-            DisplayPhoto() { /* compiled code */ }
-        }
-
-        public static final class Entity implements android.provider.BaseColumns, android.provider.ContactsContract.DataColumns {
-            public static final java.lang.String CONTENT_DIRECTORY = "entity";
-            public static final java.lang.String DATA_ID = "data_id";
-
-            Entity() { /* compiled code */ }
-        }
-
-        public static final class Data implements android.provider.BaseColumns, android.provider.ContactsContract.DataColumns {
-            public static final java.lang.String CONTENT_DIRECTORY = "data";
-
-            Data() { /* compiled code */ }
-        }
-    }
-
-    protected static interface RawContactsColumns {
-        java.lang.String ACCOUNT_TYPE_AND_DATA_SET = "account_type_and_data_set";
-        java.lang.String AGGREGATION_MODE = "aggregation_mode";
-        java.lang.String BACKUP_ID = "backup_id";
-        java.lang.String CONTACT_ID = "contact_id";
-        java.lang.String DATA_SET = "data_set";
-        java.lang.String DELETED = "deleted";
-        java.lang.String METADATA_DIRTY = "metadata_dirty";
-        java.lang.String RAW_CONTACT_IS_READ_ONLY = "raw_contact_is_read_only";
-        java.lang.String RAW_CONTACT_IS_USER_PROFILE = "raw_contact_is_user_profile";
-    }
-
-    public static final class DeletedContacts implements android.provider.ContactsContract.DeletedContactsColumns {
-        public static final android.net.Uri CONTENT_URI;
-        public static final long DAYS_KEPT_MILLISECONDS = 2592000000L;
-
-        DeletedContacts() { /* compiled code */ }
-    }
-
-    protected static interface DeletedContactsColumns {
-        java.lang.String CONTACT_DELETED_TIMESTAMP = "contact_deleted_timestamp";
-        java.lang.String CONTACT_ID = "contact_id";
-    }
-
-    public static final class Profile implements android.provider.BaseColumns, android.provider.ContactsContract.ContactsColumns, android.provider.ContactsContract.ContactOptionsColumns, android.provider.ContactsContract.ContactNameColumns, android.provider.ContactsContract.ContactStatusColumns {
-        public static final android.net.Uri CONTENT_RAW_CONTACTS_URI;
-        public static final android.net.Uri CONTENT_URI;
-        public static final android.net.Uri CONTENT_VCARD_URI;
-        public static final long MIN_ID = 9223372034707292160L;
-
-        Profile() { /* compiled code */ }
-    }
-
-    public static class Contacts implements android.provider.BaseColumns, android.provider.ContactsContract.ContactsColumns, android.provider.ContactsContract.ContactOptionsColumns, android.provider.ContactsContract.ContactNameColumns, android.provider.ContactsContract.ContactStatusColumns {
-        public static final android.net.Uri CONTENT_FILTER_URI;
-        public static final android.net.Uri CONTENT_FREQUENT_URI;
-        public static final android.net.Uri CONTENT_GROUP_URI;
-        public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/contact";
-        public static final android.net.Uri CONTENT_LOOKUP_URI;
-        public static final android.net.Uri CONTENT_MULTI_VCARD_URI;
-        public static final android.net.Uri CONTENT_STREQUENT_FILTER_URI;
-        public static final android.net.Uri CONTENT_STREQUENT_URI;
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/contact";
-        public static final android.net.Uri CONTENT_URI;
-        public static final java.lang.String CONTENT_VCARD_TYPE = "text/x-vcard";
-        public static final android.net.Uri CONTENT_VCARD_URI;
-        public static final android.net.Uri ENTERPRISE_CONTENT_FILTER_URI;
-        public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX = "android.provider.extra.ADDRESS_BOOK_INDEX";
-        public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_COUNTS = "android.provider.extra.ADDRESS_BOOK_INDEX_COUNTS";
-        public static final java.lang.String EXTRA_ADDRESS_BOOK_INDEX_TITLES = "android.provider.extra.ADDRESS_BOOK_INDEX_TITLES";
-        public static final java.lang.String QUERY_PARAMETER_VCARD_NO_PHOTO = "no_photo";
-
-        Contacts() { /* compiled code */ }
-
-        public static android.net.Uri getLookupUri(android.content.ContentResolver resolver, android.net.Uri contactUri) { /* compiled code */ }
-
-        public static android.net.Uri getLookupUri(long contactId, java.lang.String lookupKey) { /* compiled code */ }
-
-        public static android.net.Uri lookupContact(android.content.ContentResolver resolver, android.net.Uri lookupUri) { /* compiled code */ }
-
-        /**
-         * @deprecated
-         */
-        @java.lang.Deprecated
-        public static void markAsContacted(android.content.ContentResolver resolver, long contactId) { /* compiled code */ }
-
-        public static boolean isEnterpriseContactId(long contactId) { /* compiled code */ }
-
-        public static java.io.InputStream openContactPhotoInputStream(android.content.ContentResolver cr, android.net.Uri contactUri, boolean preferHighres) { /* compiled code */ }
-
-        public static java.io.InputStream openContactPhotoInputStream(android.content.ContentResolver cr, android.net.Uri contactUri) { /* compiled code */ }
-
-        public static final class Photo implements android.provider.BaseColumns, android.provider.ContactsContract.DataColumnsWithJoins {
-            public static final java.lang.String CONTENT_DIRECTORY = "photo";
-            public static final java.lang.String DISPLAY_PHOTO = "display_photo";
-            public static final java.lang.String PHOTO = "data15";
-            public static final java.lang.String PHOTO_FILE_ID = "data14";
-
-            Photo() { /* compiled code */ }
-        }
-
-        public static final class AggregationSuggestions implements android.provider.BaseColumns, android.provider.ContactsContract.ContactsColumns, android.provider.ContactsContract.ContactOptionsColumns, android.provider.ContactsContract.ContactStatusColumns {
-            public static final java.lang.String CONTENT_DIRECTORY = "suggestions";
-
-            AggregationSuggestions() { /* compiled code */ }
-
-            public static final class Builder {
-                public Builder() { /* compiled code */ }
-
-                public android.provider.ContactsContract.Contacts.AggregationSuggestions.Builder setContactId(long contactId) { /* compiled code */ }
-
-                public android.provider.ContactsContract.Contacts.AggregationSuggestions.Builder addNameParameter(java.lang.String name) { /* compiled code */ }
-
-                public android.provider.ContactsContract.Contacts.AggregationSuggestions.Builder setLimit(int limit) { /* compiled code */ }
-
-                public android.net.Uri build() { /* compiled code */ }
+    public WritableArray getContactsMatchingString(String searchString) {
+        Map<String, Contact> matchingContacts;
+        {
+            Cursor cursor = contentResolver.query(
+                    ContactsContract.Data.CONTENT_URI,
+                    FULL_PROJECTION.toArray(new String[FULL_PROJECTION.size()]),
+                    ContactsContract.Contacts.DISPLAY_NAME_PRIMARY + " LIKE ?",
+                    new String[]{"%" + searchString + "%"},
+                    null
+            );
+
+            try {
+                matchingContacts = loadContactsFrom(cursor);
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
             }
         }
 
-        public static final class Entity implements android.provider.BaseColumns, android.provider.ContactsContract.ContactsColumns, android.provider.ContactsContract.ContactNameColumns, android.provider.ContactsContract.RawContactsColumns, android.provider.ContactsContract.BaseSyncColumns, android.provider.ContactsContract.SyncColumns, android.provider.ContactsContract.DataColumns, android.provider.ContactsContract.StatusColumns, android.provider.ContactsContract.ContactOptionsColumns, android.provider.ContactsContract.ContactStatusColumns, android.provider.ContactsContract.DataUsageStatColumns {
-            public static final java.lang.String CONTENT_DIRECTORY = "entities";
-            public static final java.lang.String DATA_ID = "data_id";
-            public static final java.lang.String RAW_CONTACT_ID = "raw_contact_id";
+        WritableArray contacts = Arguments.createArray();
+        for (Contact contact : matchingContacts.values()) {
+            contacts.pushMap(contact.toMap());
+        }
+        return contacts;
+    }
 
-            Entity() { /* compiled code */ }
+     public WritableMap getContactByRawId(String contactRawId) {
+
+        // Get Contact Id from Raw Contact Id
+        String[] projections = new String[]{ContactsContract.RawContacts.CONTACT_ID};
+        String select = ContactsContract.RawContacts._ID + "= ?";
+        String[] selectionArgs = new String[]{contactRawId};
+        Cursor rawCursor = contentResolver.query(ContactsContract.RawContacts.CONTENT_URI, projections, select, selectionArgs, null);
+        String contactId = null;
+        if (rawCursor.getCount() == 0) {
+            /*contact id not found */
         }
 
-        public static final class Data implements android.provider.BaseColumns, android.provider.ContactsContract.DataColumns {
-            public static final java.lang.String CONTENT_DIRECTORY = "data";
-
-            Data() { /* compiled code */ }
+        if (rawCursor.moveToNext()) {
+            int columnIndex;
+            columnIndex = rawCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID);
+            if (columnIndex == -1) {
+                /* trouble getting contact id */
+            } else {
+                contactId = rawCursor.getString(columnIndex);
+            }
         }
+
+        rawCursor.close();
+
+        //Now that we have the real contact id, fetch information
+        return getContactById(contactId);
     }
 
-    protected static interface ContactNameColumns {
-        java.lang.String DISPLAY_NAME_ALTERNATIVE = "display_name_alt";
-        java.lang.String DISPLAY_NAME_PRIMARY = "display_name";
-        java.lang.String DISPLAY_NAME_SOURCE = "display_name_source";
-        java.lang.String PHONETIC_NAME = "phonetic_name";
-        java.lang.String PHONETIC_NAME_STYLE = "phonetic_name_style";
-        java.lang.String SORT_KEY_ALTERNATIVE = "sort_key_alt";
-        java.lang.String SORT_KEY_PRIMARY = "sort_key";
+    public WritableMap getContactById(String contactId) {
+
+        Map<String, Contact> matchingContacts;
+        {
+            Cursor cursor = contentResolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                FULL_PROJECTION.toArray(new String[FULL_PROJECTION.size()]),
+                ContactsContract.RawContacts.CONTACT_ID + " = ?",
+                new String[]{contactId},
+                null
+            );
+
+            try {
+                matchingContacts = loadContactsFrom(cursor);
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        }
+
+        if(matchingContacts.values().size() > 0) {
+            return matchingContacts.values().iterator().next().toMap();
+        }
+
+       return null;
     }
 
-    public static interface DisplayNameSources {
-        int EMAIL = 10;
-        int NICKNAME = 35;
-        int ORGANIZATION = 30;
-        int PHONE = 20;
-        int STRUCTURED_NAME = 40;
-        int STRUCTURED_PHONETIC_NAME = 37;
-        int UNDEFINED = 0;
+    public WritableArray getContacts() {
+        Map<String, Contact> justMe;
+        {
+            Cursor cursor = contentResolver.query(
+                    Uri.withAppendedPath(ContactsContract.Profile.CONTENT_URI, ContactsContract.Contacts.Data.CONTENT_DIRECTORY),
+                    JUST_ME_PROJECTION.toArray(new String[JUST_ME_PROJECTION.size()]),
+                    null,
+                    null,
+                    null
+            );
+
+            try {
+                justMe = loadContactsFrom(cursor);
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        }
+
+        Map<String, Contact> everyoneElse;
+        {
+            Cursor cursor = contentResolver.query(
+                    ContactsContract.Data.CONTENT_URI,
+                    FULL_PROJECTION.toArray(new String[FULL_PROJECTION.size()]),
+                    ContactsContract.Data.MIMETYPE + "=? OR " + ContactsContract.Data.MIMETYPE + "=? OR " + ContactsContract.Data.MIMETYPE + "=? OR " + ContactsContract.Data.MIMETYPE + "=? OR " + ContactsContract.Data.MIMETYPE + "=? OR " + ContactsContract.Data.MIMETYPE + "=?",
+                    new String[]{Email.CONTENT_ITEM_TYPE, Phone.CONTENT_ITEM_TYPE, StructuredName.CONTENT_ITEM_TYPE, Organization.CONTENT_ITEM_TYPE, StructuredPostal.CONTENT_ITEM_TYPE, Event.CONTENT_ITEM_TYPE},
+                    null
+            );
+
+            try {
+                everyoneElse = loadContactsFrom(cursor);
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        }
+
+        WritableArray contacts = Arguments.createArray();
+        for (Contact contact : justMe.values()) {
+            contacts.pushMap(contact.toMap());
+        }
+        for (Contact contact : everyoneElse.values()) {
+            contacts.pushMap(contact.toMap());
+        }
+
+        return contacts;
     }
 
-    public static interface PhoneticNameStyle {
-        int JAPANESE = 4;
-        int KOREAN = 5;
-        int PINYIN = 3;
-        int UNDEFINED = 0;
+    @NonNull
+    private Map<String, Contact> loadContactsFrom(Cursor cursor) {
+
+        Map<String, Contact> map = new LinkedHashMap<>();
+
+        while (cursor != null && cursor.moveToNext()) {
+
+            int columnIndexContactId = cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID);
+            int columnIndexId = cursor.getColumnIndex(ContactsContract.Data._ID);
+            int columnIndexRawContactId = cursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID);
+            String contactId;
+            String id;
+            String rawContactId;
+            if (columnIndexContactId != -1) {
+                contactId = cursor.getString(columnIndexContactId);
+            } else {
+                //todo - double check this, it may not be necessary any more
+                contactId = String.valueOf(ID_FOR_PROFILE_CONTACT);//no contact id for 'ME' user
+            }
+
+            if (columnIndexId != -1) {
+                id = cursor.getString(columnIndexId);
+            } else {
+                //todo - double check this, it may not be necessary any more
+                id = String.valueOf(ID_FOR_PROFILE_CONTACT);//no contact id for 'ME' user
+            }
+
+            if (columnIndexRawContactId != -1) {
+                rawContactId = cursor.getString(columnIndexRawContactId);
+            } else {
+                //todo - double check this, it may not be necessary any more
+                rawContactId = String.valueOf(ID_FOR_PROFILE_CONTACT);//no contact id for 'ME' user
+            }
+
+            if (!map.containsKey(contactId)) {
+                map.put(contactId, new Contact(contactId));
+            }
+
+            Contact contact = map.get(contactId);
+            String mimeType = cursor.getString(cursor.getColumnIndex(ContactsContract.Data.MIMETYPE));
+            String name = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+            contact.rawContactId = rawContactId;
+            if (!TextUtils.isEmpty(name) && TextUtils.isEmpty(contact.displayName)) {
+                contact.displayName = name;
+            }
+
+            if (TextUtils.isEmpty(contact.photoUri)) {
+                String rawPhotoURI = cursor.getString(cursor.getColumnIndex(Contactables.PHOTO_URI));
+                if (!TextUtils.isEmpty(rawPhotoURI)) {
+                    contact.photoUri = rawPhotoURI;
+                    contact.hasPhoto = true;
+                }
+            }
+            if (mimeType.equals(StructuredName.CONTENT_ITEM_TYPE)) {
+                contact.givenName = cursor.getString(cursor.getColumnIndex(StructuredName.GIVEN_NAME));
+                contact.middleName = cursor.getString(cursor.getColumnIndex(StructuredName.MIDDLE_NAME));
+                contact.familyName = cursor.getString(cursor.getColumnIndex(StructuredName.FAMILY_NAME));
+                contact.prefix = cursor.getString(cursor.getColumnIndex(StructuredName.PREFIX));
+                contact.suffix = cursor.getString(cursor.getColumnIndex(StructuredName.SUFFIX));
+            } else if (mimeType.equals(Phone.CONTENT_ITEM_TYPE)) {
+                String phoneNumber = cursor.getString(cursor.getColumnIndex(Phone.NUMBER));
+                int type = cursor.getInt(cursor.getColumnIndex(Phone.TYPE));
+
+                if (!TextUtils.isEmpty(phoneNumber)) {
+                    String label;
+                    switch (type) {
+                        case Phone.TYPE_HOME:
+                            label = "home";
+                            break;
+                        case Phone.TYPE_WORK:
+                            label = "work";
+                            break;
+                        case Phone.TYPE_MOBILE:
+                            label = "mobile";
+                            break;
+                        default:
+                            label = "other";
+                    }
+                    contact.phones.add(new Contact.Item(label, phoneNumber, id));
+                }
+            } else if (mimeType.equals(Email.CONTENT_ITEM_TYPE)) {
+                String email = cursor.getString(cursor.getColumnIndex(Email.ADDRESS));
+                int type = cursor.getInt(cursor.getColumnIndex(Email.TYPE));
+                if (!TextUtils.isEmpty(email)) {
+                    String label;
+                    switch (type) {
+                        case Email.TYPE_HOME:
+                            label = "home";
+                            break;
+                        case Email.TYPE_WORK:
+                            label = "work";
+                            break;
+                        case Email.TYPE_MOBILE:
+                            label = "mobile";
+                            break;
+                        case Email.TYPE_CUSTOM:
+                            if (cursor.getString(cursor.getColumnIndex(Email.LABEL)) != null) {
+                                label = cursor.getString(cursor.getColumnIndex(Email.LABEL)).toLowerCase();
+                            } else {
+                                label = "";
+                            }
+                            break;
+                        default:
+                            label = "other";
+                    }
+                    contact.emails.add(new Contact.Item(label, email, id));
+                }
+            } else if (mimeType.equals(Organization.CONTENT_ITEM_TYPE)) {
+                contact.company = cursor.getString(cursor.getColumnIndex(Organization.COMPANY));
+                contact.jobTitle = cursor.getString(cursor.getColumnIndex(Organization.TITLE));
+                contact.department = cursor.getString(cursor.getColumnIndex(Organization.DEPARTMENT));
+            } else if (mimeType.equals(StructuredPostal.CONTENT_ITEM_TYPE)) {
+                contact.postalAddresses.add(new Contact.PostalAddressItem(cursor));
+            } else if (mimeType.equals(Event.CONTENT_ITEM_TYPE)) {
+                int eventType = cursor.getInt(cursor.getColumnIndex(Event.TYPE));
+                if (eventType == Event.TYPE_BIRTHDAY) {
+                    try {
+                        String birthday = cursor.getString(cursor.getColumnIndex(Event.START_DATE)).replace("--", "");
+                        String[] yearMonthDay = birthday.split("-");
+                        List<String> yearMonthDayList = Arrays.asList(yearMonthDay);
+
+                        if (yearMonthDayList.size() == 2) {
+                            // birthday is formatted "12-31"
+                            int month = Integer.parseInt(yearMonthDayList.get(0));
+                            int day = Integer.parseInt(yearMonthDayList.get(1));
+                            if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                                contact.birthday = new Contact.Birthday(month, day);
+                            }
+                        } else if (yearMonthDayList.size() == 3) {
+                            // birthday is formatted "1986-12-31"
+                            int year = Integer.parseInt(yearMonthDayList.get(0));
+                            int month = Integer.parseInt(yearMonthDayList.get(1));
+                            int day = Integer.parseInt(yearMonthDayList.get(2));
+                            if (year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                                contact.birthday = new Contact.Birthday(year, month, day);
+                            }
+                        }
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        // whoops, birthday isn't in the format we expect
+                        Log.w("ContactsProvider", e.toString());
+
+                    }
+                }
+            }
+        }
+
+        return map;
     }
 
-    public static interface FullNameStyle {
-        int CHINESE = 3;
-        int CJK = 2;
-        int JAPANESE = 4;
-        int KOREAN = 5;
-        int UNDEFINED = 0;
-        int WESTERN = 1;
+    public String getPhotoUriFromContactId(String contactId) {
+        Cursor cursor = contentResolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                PHOTO_PROJECTION.toArray(new String[PHOTO_PROJECTION.size()]),
+                ContactsContract.RawContacts.CONTACT_ID + " = ?",
+                new String[]{contactId},
+                null
+        );
+        try {
+            if (cursor != null && cursor.moveToNext()) {
+                String rawPhotoURI = cursor.getString(cursor.getColumnIndex(Contactables.PHOTO_URI));
+                if (!TextUtils.isEmpty(rawPhotoURI)) {
+                    return rawPhotoURI;
+                }
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return null;
     }
 
-    protected static interface ContactStatusColumns {
-        java.lang.String CONTACT_CHAT_CAPABILITY = "contact_chat_capability";
-        java.lang.String CONTACT_PRESENCE = "contact_presence";
-        java.lang.String CONTACT_STATUS = "contact_status";
-        java.lang.String CONTACT_STATUS_ICON = "contact_status_icon";
-        java.lang.String CONTACT_STATUS_LABEL = "contact_status_label";
-        java.lang.String CONTACT_STATUS_RES_PACKAGE = "contact_status_res_package";
-        java.lang.String CONTACT_STATUS_TIMESTAMP = "contact_status_ts";
-    }
+    private static class Contact {
+        private String contactId;
+        private String rawContactId;
+        private String displayName;
+        private String givenName = "";
+        private String middleName = "";
+        private String familyName = "";
+        private String prefix = "";
+        private String suffix = "";
+        private String company = "";
+        private String jobTitle = "";
+        private String department = "";
+        private boolean hasPhoto = false;
+        private String photoUri;
+        private List<Item> emails = new ArrayList<>();
+        private List<Item> phones = new ArrayList<>();
+        private List<PostalAddressItem> postalAddresses = new ArrayList<>();
+        private Birthday birthday;
 
-    protected static interface ContactsColumns {
-        java.lang.String CONTACT_LAST_UPDATED_TIMESTAMP = "contact_last_updated_timestamp";
-        java.lang.String DISPLAY_NAME = "display_name";
-        java.lang.String HAS_PHONE_NUMBER = "has_phone_number";
-        java.lang.String IN_DEFAULT_DIRECTORY = "in_default_directory";
-        java.lang.String IN_VISIBLE_GROUP = "in_visible_group";
-        java.lang.String IS_USER_PROFILE = "is_user_profile";
-        java.lang.String LOOKUP_KEY = "lookup";
-        java.lang.String NAME_RAW_CONTACT_ID = "name_raw_contact_id";
-        java.lang.String PHOTO_FILE_ID = "photo_file_id";
-        java.lang.String PHOTO_ID = "photo_id";
-        java.lang.String PHOTO_THUMBNAIL_URI = "photo_thumb_uri";
-        java.lang.String PHOTO_URI = "photo_uri";
-    }
 
-    protected static interface ContactOptionsColumns {
-        java.lang.String CUSTOM_RINGTONE = "custom_ringtone";
-        java.lang.String LAST_TIME_CONTACTED = "last_time_contacted";
-        java.lang.String PINNED = "pinned";
-        java.lang.String SEND_TO_VOICEMAIL = "send_to_voicemail";
-        java.lang.String STARRED = "starred";
-        java.lang.String TIMES_CONTACTED = "times_contacted";
-    }
+        public Contact(String contactId) {
+            this.contactId = contactId;
+        }
 
-    protected static interface SyncColumns extends android.provider.ContactsContract.BaseSyncColumns {
-        java.lang.String ACCOUNT_NAME = "account_name";
-        java.lang.String ACCOUNT_TYPE = "account_type";
-        java.lang.String DIRTY = "dirty";
-        java.lang.String SOURCE_ID = "sourceid";
-        java.lang.String VERSION = "version";
-    }
+        public WritableMap toMap() {
+            WritableMap contact = Arguments.createMap();
+            contact.putString("recordID", contactId);
+            contact.putString("rawContactId", rawContactId);
+            contact.putString("givenName", TextUtils.isEmpty(givenName) ? displayName : givenName);
+            contact.putString("middleName", middleName);
+            contact.putString("familyName", familyName);
+            contact.putString("prefix", prefix);
+            contact.putString("suffix", suffix);
+            contact.putString("company", company);
+            contact.putString("jobTitle", jobTitle);
+            contact.putString("department", department);
+            contact.putBoolean("hasThumbnail", this.hasPhoto);
+            contact.putString("thumbnailPath", photoUri == null ? "" : photoUri);
 
-    protected static interface BaseSyncColumns {
-        java.lang.String SYNC1 = "sync1";
-        java.lang.String SYNC2 = "sync2";
-        java.lang.String SYNC3 = "sync3";
-        java.lang.String SYNC4 = "sync4";
-    }
+            WritableArray phoneNumbers = Arguments.createArray();
+            for (Item item : phones) {
+                WritableMap map = Arguments.createMap();
+                map.putString("number", item.value);
+                map.putString("label", item.label);
+                map.putString("id", item.id);
+                phoneNumbers.pushMap(map);
+            }
+            contact.putArray("phoneNumbers", phoneNumbers);
 
-    public static final class ProfileSyncState implements android.provider.SyncStateContract.Columns {
-        public static final java.lang.String CONTENT_DIRECTORY = "syncstate";
-        public static final android.net.Uri CONTENT_URI;
+            WritableArray emailAddresses = Arguments.createArray();
+            for (Item item : emails) {
+                WritableMap map = Arguments.createMap();
+                map.putString("email", item.value);
+                map.putString("label", item.label);
+                map.putString("id", item.id);
+                emailAddresses.pushMap(map);
+            }
+            contact.putArray("emailAddresses", emailAddresses);
 
-        ProfileSyncState() { /* compiled code */ }
+            WritableArray postalAddresses = Arguments.createArray();
+            for (PostalAddressItem item : this.postalAddresses) {
+                postalAddresses.pushMap(item.map);
+            }
+            contact.putArray("postalAddresses", postalAddresses);
 
-        public static byte[] get(android.content.ContentProviderClient provider, android.accounts.Account account) throws android.os.RemoteException { /* compiled code */ }
+            WritableMap birthdayMap = Arguments.createMap();
+            if (birthday != null) {
+                if (birthday.year > 0) {
+                    birthdayMap.putInt("year", birthday.year);
+                }
+                birthdayMap.putInt("month", birthday.month);
+                birthdayMap.putInt("day", birthday.day);
+                contact.putMap("birthday", birthdayMap);
+            }
 
-        public static android.util.Pair<android.net.Uri,byte[]> getWithUri(android.content.ContentProviderClient provider, android.accounts.Account account) throws android.os.RemoteException { /* compiled code */ }
+            return contact;
+        }
 
-        public static void set(android.content.ContentProviderClient provider, android.accounts.Account account, byte[] data) throws android.os.RemoteException { /* compiled code */ }
+        public static class Item {
+            public String label;
+            public String value;
+            public String id;
 
-        public static android.content.ContentProviderOperation newSetOperation(android.accounts.Account account, byte[] data) { /* compiled code */ }
-    }
+            public Item(String label, String value, String id) {
+                this.id = id;
+                this.label = label;
+                this.value = value;
+            }
 
-    public static final class SyncState implements android.provider.SyncStateContract.Columns {
-        public static final java.lang.String CONTENT_DIRECTORY = "syncstate";
-        public static final android.net.Uri CONTENT_URI;
+            public Item(String label, String value) {
+                this.label = label;
+                this.value = value;
+            }
+        }
 
-        SyncState() { /* compiled code */ }
+        public static class Birthday {
+            public int year = 0;
+            public int month = 0;
+            public int day = 0;
 
-        public static byte[] get(android.content.ContentProviderClient provider, android.accounts.Account account) throws android.os.RemoteException { /* compiled code */ }
+            public Birthday(int year, int month, int day) {
+                this.year = year;
+                this.month = month;
+                this.day = day;
+            }
 
-        public static android.util.Pair<android.net.Uri,byte[]> getWithUri(android.content.ContentProviderClient provider, android.accounts.Account account) throws android.os.RemoteException { /* compiled code */ }
+            public Birthday(int month, int day) {
+                this.month = month;
+                this.day = day;
+            }
+        }
 
-        public static void set(android.content.ContentProviderClient provider, android.accounts.Account account, byte[] data) throws android.os.RemoteException { /* compiled code */ }
+        public static class PostalAddressItem {
+            public final WritableMap map;
 
-        public static android.content.ContentProviderOperation newSetOperation(android.accounts.Account account, byte[] data) { /* compiled code */ }
-    }
+            public PostalAddressItem(Cursor cursor) {
+                map = Arguments.createMap();
 
-    public static final class Directory implements android.provider.BaseColumns {
-        public static final java.lang.String ACCOUNT_NAME = "accountName";
-        public static final java.lang.String ACCOUNT_TYPE = "accountType";
-        public static final java.lang.String CALLER_PACKAGE_PARAM_KEY = "callerPackage";
-        public static final java.lang.String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/contact_directory";
-        public static final java.lang.String CONTENT_TYPE = "vnd.android.cursor.dir/contact_directories";
-        public static final android.net.Uri CONTENT_URI;
-        public static final long DEFAULT = 0L;
-        public static final java.lang.String DIRECTORY_AUTHORITY = "authority";
-        public static final java.lang.String DISPLAY_NAME = "displayName";
-        public static final android.net.Uri ENTERPRISE_CONTENT_URI;
-        public static final long ENTERPRISE_DEFAULT = 1000000000L;
-        public static final long ENTERPRISE_LOCAL_INVISIBLE = 1000000001L;
-        public static final java.lang.String EXPORT_SUPPORT = "exportSupport";
-        public static final int EXPORT_SUPPORT_ANY_ACCOUNT = 2;
-        public static final int EXPORT_SUPPORT_NONE = 0;
-        public static final int EXPORT_SUPPORT_SAME_ACCOUNT_ONLY = 1;
-        public static final long LOCAL_INVISIBLE = 1L;
-        public static final java.lang.String PACKAGE_NAME = "packageName";
-        public static final java.lang.String PHOTO_SUPPORT = "photoSupport";
-        public static final int PHOTO_SUPPORT_FULL = 3;
-        public static final int PHOTO_SUPPORT_FULL_SIZE_ONLY = 2;
-        public static final int PHOTO_SUPPORT_NONE = 0;
-        public static final int PHOTO_SUPPORT_THUMBNAIL_ONLY = 1;
-        public static final java.lang.String SHORTCUT_SUPPORT = "shortcutSupport";
-        public static final int SHORTCUT_SUPPORT_DATA_ITEMS_ONLY = 1;
-        public static final int SHORTCUT_SUPPORT_FULL = 2;
-        public static final int SHORTCUT_SUPPORT_NONE = 0;
-        public static final java.lang.String TYPE_RESOURCE_ID = "typeResourceId";
+                map.putString("label", getLabel(cursor));
+                putString(cursor, "formattedAddress", StructuredPostal.FORMATTED_ADDRESS);
+                putString(cursor, "street", StructuredPostal.STREET);
+                putString(cursor, "pobox", StructuredPostal.POBOX);
+                putString(cursor, "neighborhood", StructuredPostal.NEIGHBORHOOD);
+                putString(cursor, "city", StructuredPostal.CITY);
+                putString(cursor, "region", StructuredPostal.REGION);
+                putString(cursor, "state", StructuredPostal.REGION);
+                putString(cursor, "postCode", StructuredPostal.POSTCODE);
+                putString(cursor, "country", StructuredPostal.COUNTRY);
+            }
 
-        Directory() { /* compiled code */ }
+            private void putString(Cursor cursor, String key, String androidKey) {
+                final String value = cursor.getString(cursor.getColumnIndex(androidKey));
+                if (!TextUtils.isEmpty(value))
+                    map.putString(key, value);
+            }
 
-        public static boolean isRemoteDirectoryId(long directoryId) { /* compiled code */ }
-
-        public static boolean isEnterpriseDirectoryId(long directoryId) { /* compiled code */ }
-
-        public static void notifyDirectoryChange(android.content.ContentResolver resolver) { /* compiled code */ }
+            static String getLabel(Cursor cursor) {
+                switch (cursor.getInt(cursor.getColumnIndex(StructuredPostal.TYPE))) {
+                    case StructuredPostal.TYPE_HOME:
+                        return "home";
+                    case StructuredPostal.TYPE_WORK:
+                        return "work";
+                    case StructuredPostal.TYPE_CUSTOM:
+                        final String label = cursor.getString(cursor.getColumnIndex(StructuredPostal.LABEL));
+                        return label != null ? label : "";
+                }
+                return "other";
+            }
+        }
     }
 }
