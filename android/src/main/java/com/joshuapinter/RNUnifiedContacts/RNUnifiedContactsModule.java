@@ -2,11 +2,13 @@ package com.joshuapinter.RNUnifiedContacts;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.provider.Settings;
@@ -142,7 +144,22 @@ class RNUnifiedContactsModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void getContacts(final Callback callback) {
-        searchContacts(null, callback);
+        getAllContacts(callback);
+    }
+
+    public void getAllContacts(final Callback callback) {
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                Context context = getReactApplicationContext();
+                ContentResolver cr = context.getContentResolver();
+
+                ContactsProvider contactsProvider = new ContactsProvider(cr);
+                WritableArray contacts = contactsProvider.getContacts();
+
+                callback.invoke(null, contacts);
+            }
+        });
     }
 
     @ReactMethod
@@ -167,7 +184,6 @@ class RNUnifiedContactsModule extends ReactContextBaseJavaModule {
                 whereString,
                 whereParams,
                 null );
-
         while( contactCursor.moveToNext() ) {
 
             int contactId = getIntFromCursor( contactCursor, ContactsContract.Data.CONTACT_ID );
@@ -181,6 +197,7 @@ class RNUnifiedContactsModule extends ReactContextBaseJavaModule {
             contactIds.add( contactId );
 
         }
+
 
         contactCursor.close();
 
