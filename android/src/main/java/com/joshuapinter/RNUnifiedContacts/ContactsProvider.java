@@ -259,7 +259,6 @@ public class ContactsProvider {
             if (!TextUtils.isEmpty(name) && TextUtils.isEmpty(contact.displayName)) {
                 contact.displayName = name;
             }
-
             if (TextUtils.isEmpty(contact.photoUri)) {
                 String rawPhotoURI = cursor.getString(cursor.getColumnIndex(Contactables.PHOTO_URI));
                 if (!TextUtils.isEmpty(rawPhotoURI)) {
@@ -414,7 +413,7 @@ public class ContactsProvider {
             WritableMap contact = Arguments.createMap();
             contact.putString("recordID", contactId);
             contact.putString("rawContactId", rawContactId);
-            contact.putString("givenName", TextUtils.isEmpty(givenName) ? displayName : givenName);
+            contact.putString("givenName", givenName);
             contact.putString("middleName", middleName);
             contact.putString("familyName", familyName);
             contact.putString("prefix", prefix);
